@@ -173,6 +173,14 @@ app.get('/orders/:id', async (req, res) => {
   res.json(order);
 });
 
+//
+app.delete('/orders', async (req, res) => {
+  if (!req.query.user_id) return res.status(400).json({ error: 'user_id is required' });
+  const r = await Order.deleteMany({ userId: req.query.user_id });
+  res.json({ message: 'Order history cleared', deleted: r.deletedCount });
+});
+//
+
 const PORT = process.env.PORT || 3003;
 
 mongoose

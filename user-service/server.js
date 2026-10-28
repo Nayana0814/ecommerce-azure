@@ -57,6 +57,16 @@ app.get('/users/:id', async (req, res) => {
   res.json(user);
 });
 
+//
+app.delete('/users/:id', async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+  const user = await User.findByIdAndDelete(req.params.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  res.json({ message: 'User deleted' });
+});
+//
 const PORT = process.env.PORT || 3001;
 
 mongoose

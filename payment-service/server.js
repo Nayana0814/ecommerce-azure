@@ -72,6 +72,13 @@ app.get('/payments/:id', async (req, res) => {
   if (!payment) return res.status(404).json({ error: 'Payment not found' });
   res.json(payment);
 });
+//
+app.delete('/payments', async (req, res) => {
+  if (!req.query.user_id) return res.status(400).json({ error: 'user_id is required' });
+  const r = await Payment.deleteMany({ userId: req.query.user_id });
+  res.json({ message: 'Payment history cleared', deleted: r.deletedCount });
+});
+//
 
 const PORT = process.env.PORT || 3005;
 

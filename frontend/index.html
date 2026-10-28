@@ -3,79 +3,226 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>E-Commerce Microservices</title>
+<title>Aurora Store</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-  *{box-sizing:border-box}
-  body{font-family:system-ui,sans-serif;margin:0;background:#f4f6f8;color:#222}
-  header{background:#0f4c81;color:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
-  header h1{margin:0;font-size:20px}
-  main{max-width:1000px;margin:20px auto;padding:0 16px;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(440px,1fr))}
-  @media(max-width:520px){main{grid-template-columns:1fr}}
-  section{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-  h2{margin:0 0 12px;font-size:16px;color:#0f4c81}
-  input,select,button{padding:8px;margin:3px 0;font-size:14px;border:1px solid #ccc;border-radius:6px}
-  input{width:100%}
-  button{background:#0f4c81;color:#fff;border:0;cursor:pointer}
-  button.sec{background:#e5e9ee;color:#222}
-  button.del{background:#c0392b}
-  .row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #eee;font-size:14px}
-  .small{font-size:12px;color:#666}
-  .tag{padding:2px 8px;border-radius:10px;font-size:12px;color:#fff}
-  .PAID{background:#27ae60}.PAYMENT_FAILED,.PAYMENT_ERROR{background:#c0392b}.PENDING{background:#e67e22}
-  #toast{position:fixed;bottom:20px;right:20px;background:#222;color:#fff;padding:10px 16px;border-radius:8px;display:none;max-width:320px}
+:root{
+  --ink:#0d0914; --plum:#150f21; --raised:#1e1730; --line:#2e2542;
+  --text:#ece7f7; --muted:#9a8fb4; --violet:#a78bfa; --violet-d:#7c5cf0;
+  --rose:#f472b6; --rose-d:#db4f98; --ok:#5fd4a4; --warn:#f0b35a; --bad:#f26b8a;
+  --display:'Sora','Segoe UI',system-ui,sans-serif;
+  --body:'DM Sans','Segoe UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--body);font-size:15px;line-height:1.55;color:var(--text);min-height:100vh;
+  background:
+    radial-gradient(900px 480px at 85% -10%,rgba(244,114,182,.16),transparent 60%),
+    radial-gradient(800px 520px at 5% -5%,rgba(124,92,240,.20),transparent 60%),
+    var(--ink);
+  background-attachment:fixed;
+}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+
+/* Top bar */
+.top{position:sticky;top:0;z-index:20;background:rgba(13,9,20,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.top-in{max-width:1180px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:28px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:.2px}
+.mark{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--violet-d),var(--rose))}
+.tabs{display:flex;gap:4px;flex:1}
+.tab{background:none;border:0;padding:8px 14px;border-radius:8px;color:var(--muted);cursor:pointer;font-weight:500}
+.tab:hover{color:var(--text)}
+.tab.on{color:var(--text);background:var(--raised)}
+.who{display:flex;align-items:center;gap:10px}
+.who label{color:var(--muted);font-size:13px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.dot.up{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.dot.down{background:var(--bad)}
+
+/* Controls */
+input,select{background:var(--plum);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+input::placeholder{color:#6f6488}
+input:focus,select:focus{border-color:var(--violet);outline:none;box-shadow:0 0 0 3px rgba(167,139,250,.18)}
+.who select{width:260px;max-width:60vw}
+.btn{border:0;border-radius:10px;padding:10px 18px;cursor:pointer;font-weight:600;transition:filter .15s,transform .05s}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:linear-gradient(120deg,var(--violet-d),var(--rose-d));color:#fff}
+.btn.primary:hover{filter:brightness(1.1)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+.btn.ghost:hover{border-color:var(--violet)}
+.btn.sm{padding:6px 12px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Layout */
+main{max-width:1180px;margin:0 auto;padding:32px 24px 80px}
+.view{display:none}.view.on{display:block}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+h1{font-family:var(--display);font-weight:600;font-size:28px;letter-spacing:-.4px}
+h2{font-family:var(--display);font-weight:600;font-size:17px}
+.sub{color:var(--muted);margin-top:4px}
+.stats{display:flex;gap:28px}
+.stat b{display:block;font-family:var(--display);font-size:22px;font-weight:600}
+.stat span{color:var(--muted);font-size:13px}
+.shop{display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start}
+.card{background:linear-gradient(180deg,var(--raised),var(--plum));border:1px solid var(--line);border-radius:16px;padding:20px}
+.search{max-width:320px}
+
+/* Products */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+.prod{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:14px;background:var(--plum);border:1px solid var(--line)}
+.prod:hover{border-color:#4a3b6b}
+.tile{height:92px;border-radius:10px;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:34px;color:#fff;
+  background:linear-gradient(135deg,rgba(124,92,240,.55),rgba(244,114,182,.45))}
+.prod h3{font-size:16px;font-weight:600}
+.prod p{color:var(--muted);font-size:13px;min-height:38px}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:auto}
+.price{font-family:var(--display);font-weight:600}
+
+/* Cart */
+.cart{position:sticky;top:84px}
+.line{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.line:last-of-type{border-bottom:0}
+.line small{color:var(--muted);display:block}
+.rm{background:none;border:0;color:var(--muted);cursor:pointer;font-size:13px;padding:0}
+.rm:hover{color:var(--bad)}
+.total{display:flex;justify-content:space-between;align-items:center;padding-top:14px;margin-top:6px;border-top:1px solid var(--line);font-family:var(--display);font-weight:600;font-size:18px}
+.check{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;margin:14px 0 12px}
+.check input{width:auto;accent-color:var(--rose)}
+.cart .btn{width:100%}
+
+/* Orders table */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{text-align:left;color:var(--muted);font-weight:500;font-size:13px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.tbl td{padding:14px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+.scroll{overflow-x:auto}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid}
+.PAID{color:var(--ok);border-color:rgba(95,212,164,.4);background:rgba(95,212,164,.08)}
+.PENDING{color:var(--warn);border-color:rgba(240,179,90,.4);background:rgba(240,179,90,.08)}
+.PAYMENT_FAILED,.PAYMENT_ERROR{color:var(--bad);border-color:rgba(242,107,138,.4);background:rgba(242,107,138,.08)}
+.mono{font-variant-numeric:tabular-nums}
+
+/* Manage */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.form{display:grid;gap:12px;margin-top:16px}
+.form label{display:grid;gap:6px;color:var(--muted);font-size:13px}
+.people{margin-top:24px}
+.person{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}
+.person small{color:var(--muted)}
+.empty{color:var(--muted);padding:28px 0;text-align:center}
+
+/* extra */
+.btn.danger{background:transparent;border:1px solid rgba(242,107,138,.45);color:var(--bad)}
+.btn.danger:hover{background:rgba(242,107,138,.1)}
+.acts{display:flex;align-items:center;gap:12px}
+.cart .btn.sm{margin-top:8px}
+
+/* Toast */
+#toast{position:fixed;right:24px;bottom:24px;max-width:340px;padding:12px 18px;border-radius:12px;background:var(--raised);border:1px solid var(--line);
+  box-shadow:0 12px 40px rgba(0,0,0,.5);opacity:0;transform:translateY(8px);pointer-events:none;transition:.2s}
+#toast.show{opacity:1;transform:none}
+#toast.err{border-color:var(--bad)}#toast.good{border-color:var(--ok)}
+
+@media(max-width:900px){.shop{grid-template-columns:1fr}.cart{position:static}.two{grid-template-columns:1fr}.tabs{order:3;width:100%}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}html{scroll-behavior:auto}}
 </style>
 </head>
 <body>
-<header>
-  <h1>🛒 E-Commerce Microservices</h1>
-  <div>Shopping as: <select id="userSelect" onchange="onUserChange()"></select></div>
-</header>
+
+<header class="top"><div class="top-in">
+  <div class="brand"><span class="mark"></span>Aurora Store</div>
+  <nav class="tabs" id="tabs">
+    <button class="tab on" data-v="shop">Shop</button>
+    <button class="tab" data-v="orders">Orders</button>
+    <button class="tab" data-v="manage">Manage</button>
+  </nav>
+  <div class="who">
+    <span class="dot" id="gw" title="Gateway status"></span>
+    <label for="userSelect">Shopping as</label>
+    <select id="userSelect"></select>
+  </div>
+</div></header>
 
 <main>
-  <section>
-    <h2>Customers</h2>
-    <input id="uName" placeholder="Name">
-    <input id="uEmail" placeholder="Email">
-    <button onclick="createUser()">Register customer</button>
+  <!-- Shop -->
+  <section class="view on" id="v-shop">
+    <div class="head">
+      <div><h1>Catalog</h1><p class="sub">Add items to your cart and check out when you are ready.</p></div>
+      <input class="search" id="q" placeholder="Search products" aria-label="Search products">
+    </div>
+    <div class="shop">
+      <div class="grid" id="products"></div>
+      <aside class="card cart">
+        <h2>Your cart</h2>
+        <div id="cart"></div>
+        <label class="check"><input type="checkbox" id="failPay"> Simulate a payment failure</label>
+        <button class="btn primary" id="checkoutBtn" onclick="checkout()">Check out</button>
+        <button class="btn ghost sm" id="clearCartBtn" onclick="clearCart()">Clear cart</button>
+      </aside>
+    </div>
   </section>
 
-  <section>
-    <h2>Add product</h2>
-    <input id="pName" placeholder="Product name">
-    <input id="pPrice" type="number" placeholder="Price">
-    <input id="pDesc" placeholder="Description">
-    <button onclick="createProduct()">Add product</button>
+  <!-- Orders -->
+  <section class="view" id="v-orders">
+    <div class="head">
+      <div><h1>Orders</h1><p class="sub">Every order placed by the selected customer.</p></div>
+      <div class="stats">
+        <div class="stat"><b id="sOrders">0</b><span>Orders</span></div>
+        <div class="stat"><b id="sSpent">0</b><span>Paid total</span></div>
+        <button class="btn danger sm" onclick="clearHistory()">Clear history</button>
+      </div>
+    </div>
+    <div class="card scroll" id="orders"></div>
   </section>
 
-  <section>
-    <h2>Products</h2>
-    <div id="products"></div>
-  </section>
-
-  <section>
-    <h2>My cart</h2>
-    <div id="cart"></div>
-    <label class="small"><input type="checkbox" id="failPay" style="width:auto"> Simulate payment failure</label><br>
-    <button onclick="checkout()">Checkout</button>
-  </section>
-
-  <section style="grid-column:1/-1">
-    <h2>My orders</h2>
-    <div id="orders"></div>
+  <!-- Manage -->
+  <section class="view" id="v-manage">
+    <div class="head">
+      <div><h1>Manage</h1><p class="sub">Register customers and add products to the catalog.</p></div>
+      <div class="stats">
+        <div class="stat"><b id="sUsers">0</b><span>Customers</span></div>
+        <div class="stat"><b id="sProducts">0</b><span>Products</span></div>
+      </div>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h2>Register a customer</h2>
+        <div class="form">
+          <label>Full name<input id="uName" placeholder="Asha Menon"></label>
+          <label>Email address<input id="uEmail" type="email" placeholder="asha@example.com"></label>
+          <button class="btn primary" onclick="createUser()">Register customer</button>
+        </div>
+        <div class="people" id="people"></div>
+      </div>
+      <div class="card">
+        <h2>Add a product</h2>
+        <div class="form">
+          <label>Product name<input id="pName" placeholder="Wireless headphones"></label>
+          <label>Price in rupees<input id="pPrice" type="number" min="0" placeholder="2999"></label>
+          <label>Description<input id="pDesc" placeholder="Short description"></label>
+          <button class="btn primary" onclick="createProduct()">Add product</button>
+        </div>
+      </div>
+    </div>
   </section>
 </main>
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <script src="config.js"></script>
 <script>
-const API = (localStorage.getItem('gatewayUrl') || window.GATEWAY_URL).replace(/\/$/, '');
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const API = (localStorage.getItem('gatewayUrl') || window.GATEWAY_URL || '').replace(/\/$/, '');
 const $ = id => document.getElementById(id);
-const money = n => '₹' + Number(n).toLocaleString('en-IN');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money = n => '\u20B9' + Number(n || 0).toLocaleString('en-IN');
+let products = [];
 
-function toast(msg){
-  const t = $('toast'); t.textContent = msg; t.style.display = 'block';
-  clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 3500);
+function toast(msg, kind){
+  const t = $('toast'); t.textContent = msg; t.className = 'show ' + (kind || '');
+  clearTimeout(t._h); t._h = setTimeout(() => t.className = '', 3500);
 }
 
 async function api(path, method = 'GET', body){
@@ -85,101 +232,181 @@ async function api(path, method = 'GET', body){
       headers: body ? {'Content-Type':'application/json'} : undefined,
       body: body ? JSON.stringify(body) : undefined
     });
-    let data = null;
-    try{ data = await res.json(); }catch{}
+    let data = null; try{ data = await res.json(); }catch{}
     return {ok: res.ok, status: res.status, data};
-  }catch(e){
-    return {ok:false, status:0, data:{error:'Cannot reach gateway at ' + API}};
+  }catch{
+    return {ok:false, status:0, data:{error:'Cannot reach the gateway. It may be starting up, so try again in a few seconds.'}};
   }
 }
 
-const userId = () => $('userSelect').value;
+const uid = () => $('userSelect').value;
 
+/* Navigation */
+document.getElementById('tabs').addEventListener('click', e => {
+  const b = e.target.closest('.tab'); if(!b) return;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t === b));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + b.dataset.v));
+});
+
+/* Gateway status */
+async function ping(){
+  const r = await api('/health');
+  $('gw').className = 'dot ' + (r.ok ? 'up' : 'down');
+}
+
+/* Customers */
 async function loadUsers(){
   const r = await api('/users');
-  const sel = $('userSelect'); const keep = sel.value;
-  sel.innerHTML = '';
-  (r.ok ? r.data : []).forEach(u => {
+  const list = r.ok ? r.data : [];
+  const sel = $('userSelect'), keep = sel.value;
+  sel.innerHTML = list.length ? '' : '<option value="">No customers yet</option>';
+  list.forEach(u => {
     const o = document.createElement('option');
     o.value = u.id; o.textContent = u.name + ' (' + u.email + ')';
     sel.appendChild(o);
   });
   if(keep) sel.value = keep;
-  if(!r.ok) toast(r.data?.error || 'Could not load users');
-  onUserChange();
+  $('sUsers').textContent = list.length;
+  $('people').innerHTML = list.length
+    ? list.map(u => `<div class="person"><span>${esc(u.name)}<br><small>${esc(u.email)}</small></span><button class="rm" onclick="deleteUser('${esc(u.id)}')">Delete</button></div>`).join('')
+    : '<div class="empty">No customers registered yet.</div>';
+  if(!r.ok) toast(r.data?.error || 'Could not load customers', 'err');
+  refreshUser();
 }
 
 async function createUser(){
-  const r = await api('/users','POST',{name:$('uName').value, email:$('uEmail').value});
-  if(r.ok){ toast('Customer registered'); $('uName').value=''; $('uEmail').value=''; await loadUsers(); $('userSelect').value = r.data.id; onUserChange(); }
-  else toast(r.data?.error || 'Error registering customer');
+  const r = await api('/users','POST',{name:$('uName').value.trim(), email:$('uEmail').value.trim()});
+  if(r.ok){
+    toast('Customer registered', 'good');
+    $('uName').value = ''; $('uEmail').value = '';
+    await loadUsers(); $('userSelect').value = r.data.id; refreshUser();
+  } else toast(r.data?.error || 'Could not register customer', 'err');
 }
 
+/* Products */
 async function loadProducts(){
   const r = await api('/products');
-  const box = $('products');
-  if(!r.ok || !r.data.length){ box.innerHTML = '<div class="small">No products yet.</div>'; return; }
-  box.innerHTML = r.data.map(p => `
-    <div class="row">
-      <div><b>${esc(p.name)}</b> – ${money(p.price)}<div class="small">${esc(p.description)}</div></div>
-      <button onclick="addToCart('${esc(p.id)}')">Add to cart</button>
-    </div>`).join('');
+  products = r.ok ? r.data : [];
+  $('sProducts').textContent = products.length;
+  renderProducts();
 }
+
+function renderProducts(){
+  const q = $('q').value.trim().toLowerCase();
+  const list = products.filter(p => !q || (p.name + ' ' + (p.description || '')).toLowerCase().includes(q));
+  $('products').innerHTML = list.length ? list.map(p => `
+    <article class="prod">
+      <div class="tile">${esc((p.name || '?').charAt(0).toUpperCase())}</div>
+      <div><h3>${esc(p.name)}</h3><p>${esc(p.description) || 'No description'}</p></div>
+      <div class="foot"><span class="price">${money(p.price)}</span>
+        <button class="rm" onclick="deleteProduct('${esc(p.id)}')">Delete</button>
+        <button class="btn ghost sm" onclick="addToCart('${esc(p.id)}')">Add to cart</button></div>
+    </article>`).join('')
+    : '<div class="empty" style="grid-column:1/-1">No products to show. Add one from the Manage tab.</div>';
+}
+$('q').addEventListener('input', renderProducts);
 
 async function createProduct(){
-  const r = await api('/products','POST',{name:$('pName').value, price:parseFloat($('pPrice').value), description:$('pDesc').value});
-  if(r.ok){ toast('Product added'); ['pName','pPrice','pDesc'].forEach(i => $(i).value=''); loadProducts(); }
-  else toast(r.data?.error || 'Error adding product');
+  const price = parseFloat($('pPrice').value);
+  const r = await api('/products','POST',{name:$('pName').value.trim(), price, description:$('pDesc').value.trim()});
+  if(r.ok){ toast('Product added', 'good'); ['pName','pPrice','pDesc'].forEach(i => $(i).value = ''); loadProducts(); }
+  else toast(r.data?.error || 'Could not add product', 'err');
 }
 
-async function addToCart(productId){
-  if(!userId()) return toast('Register or select a customer first');
-  const r = await api('/cart/' + userId() + '/items','POST',{product_id:productId, quantity:1});
-  if(r.ok){ toast('Added to cart'); loadCart(); } else toast(r.data?.error || 'Could not add to cart');
+/* Cart */
+async function addToCart(pid){
+  if(!uid()) return toast('Register or select a customer first', 'err');
+  const r = await api('/cart/' + uid() + '/items','POST',{product_id:pid, quantity:1});
+  if(r.ok){ toast('Added to cart', 'good'); loadCart(); } else toast(r.data?.error || 'Could not add to cart', 'err');
 }
 
 async function loadCart(){
-  const box = $('cart');
-  if(!userId()){ box.innerHTML = '<div class="small">Select a customer.</div>'; return; }
-  const r = await api('/cart/' + userId());
-  if(!r.ok){ box.innerHTML = '<div class="small">Cart unavailable.</div>'; return; }
-  if(!r.data.items.length){ box.innerHTML = '<div class="small">Cart is empty.</div>'; return; }
+  const box = $('cart'), btn = $('checkoutBtn');
+  if(!uid()){ box.innerHTML = '<div class="empty">Select a customer to start a cart.</div>'; btn.disabled = true; return; }
+  const r = await api('/cart/' + uid());
+  if(!r.ok){ box.innerHTML = '<div class="empty">The cart is unavailable right now.</div>'; btn.disabled = true; return; }
+  if(!r.data.items.length){ box.innerHTML = '<div class="empty">Your cart is empty.</div>'; btn.disabled = true; return; }
+  btn.disabled = false;
   box.innerHTML = r.data.items.map(i => `
-    <div class="row">
-      <div>${esc(i.name)} × ${i.quantity}<div class="small">${money(i.price * i.quantity)}</div></div>
-      <button class="del" onclick="removeItem('${esc(i.productId)}')">Remove</button>
-    </div>`).join('') + `<div class="row"><b>Total</b><b>${money(r.data.total)}</b></div>`;
+    <div class="line">
+      <div>${esc(i.name)}<small>Quantity ${i.quantity} at ${money(i.price)}</small>
+        <button class="rm" onclick="removeItem('${esc(i.productId)}')">Remove</button></div>
+      <b class="mono">${money(i.price * i.quantity)}</b>
+    </div>`).join('') + `<div class="total"><span>Total</span><span class="mono">${money(r.data.total)}</span></div>`;
 }
 
-async function removeItem(productId){
-  await api('/cart/' + userId() + '/items/' + productId,'DELETE');
-  loadCart();
-}
+async function removeItem(pid){ await api('/cart/' + uid() + '/items/' + pid,'DELETE'); loadCart(); }
 
 async function checkout(){
-  if(!userId()) return toast('Select a customer first');
-  const r = await api('/orders/checkout','POST',{user_id:userId(), simulate_payment_failure:$('failPay').checked});
-  if(r.ok) toast('Order placed and paid!');
-  else toast(r.data?.message || r.data?.error || 'Checkout failed');
+  if(!uid()) return toast('Select a customer first', 'err');
+  const btn = $('checkoutBtn'); btn.disabled = true; btn.textContent = 'Processing';
+  const r = await api('/orders/checkout','POST',{user_id:uid(), simulate_payment_failure:$('failPay').checked});
+  btn.textContent = 'Check out';
+  if(r.ok) toast('Order placed and payment confirmed', 'good');
+  else toast(r.data?.message || r.data?.error || 'Checkout failed', 'err');
   loadCart(); loadOrders();
 }
 
+/* Orders */
 async function loadOrders(){
   const box = $('orders');
-  if(!userId()){ box.innerHTML = '<div class="small">Select a customer.</div>'; return; }
-  const r = await api('/orders?user_id=' + userId());
-  if(!r.ok || !r.data.length){ box.innerHTML = '<div class="small">No orders yet.</div>'; return; }
-  box.innerHTML = r.data.map(o => `
-    <div class="row">
-      <div><b>Order ${esc(o.id)}</b>
-        <div class="small">${(o.items || []).map(i => esc(i.name) + ' × ' + i.quantity).join(', ')}</div></div>
-      <div>${money(o.total || 0)} <span class="tag ${esc(o.status)}">${esc(o.status)}</span></div>
-    </div>`).join('');
+  if(!uid()){ box.innerHTML = '<div class="empty">Select a customer to see their orders.</div>'; return; }
+  const r = await api('/orders?user_id=' + uid());
+  const list = r.ok ? r.data : [];
+  $('sOrders').textContent = list.length;
+  $('sSpent').textContent = money(list.filter(o => o.status === 'PAID').reduce((s, o) => s + (o.total || 0), 0));
+  if(!list.length){ box.innerHTML = '<div class="empty">No orders yet. Check out a cart to place one.</div>'; return; }
+  box.innerHTML = `<table class="tbl"><thead><tr><th>Order</th><th>Items</th><th>Placed</th><th>Total</th><th>Status</th></tr></thead><tbody>` +
+    list.map(o => `<tr>
+      <td class="mono">${esc(String(o.id).slice(-8))}</td>
+      <td>${(o.items || []).map(i => esc(i.name) + ' x ' + i.quantity).join('<br>')}</td>
+      <td>${o.createdAt ? new Date(o.createdAt).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'}) : ''}</td>
+      <td class="mono">${money(o.total)}</td>
+      <td><span class="badge ${esc(o.status)}">${esc(String(o.status).replace('_',' ').toLowerCase())}</span></td>
+    </tr>`).join('') + '</tbody></table>';
 }
 
-function onUserChange(){ loadCart(); loadOrders(); }
+//
+/* Deletions */
+async function deleteProduct(id){
+  if(!confirm('Delete this product from the catalog?')) return;
+  const r = await api('/products/' + id, 'DELETE');
+  if(r.ok){ toast('Product deleted', 'good'); loadProducts(); }
+  else toast(r.data?.error || 'Could not delete product', 'err');
+}
 
-loadUsers(); loadProducts();
+async function clearCart(){
+  if(!uid()) return;
+  const r = await api('/cart/' + uid(), 'DELETE');
+  if(r.ok){ toast('Cart cleared', 'good'); loadCart(); }
+  else toast(r.data?.error || 'Could not clear cart', 'err');
+}
+
+async function clearHistory(){
+  if(!uid()) return toast('Select a customer first', 'err');
+  if(!confirm('Delete all orders and payment records for this customer?')) return;
+  const a = await api('/payments?user_id=' + uid(), 'DELETE');
+  const b = await api('/orders?user_id=' + uid(), 'DELETE');
+  if(a.ok && b.ok) toast('Order and payment history cleared', 'good');
+  else toast(a.data?.error || b.data?.error || 'Could not clear history', 'err');
+  loadOrders();
+}
+
+async function deleteUser(id){
+  if(!confirm('Delete this customer along with their cart, orders and payments?')) return;
+  await api('/cart/' + id, 'DELETE');
+  await api('/payments?user_id=' + id, 'DELETE');
+  await api('/orders?user_id=' + id, 'DELETE');
+  const r = await api('/users/' + id, 'DELETE');
+  if(r.ok){ toast('Customer deleted', 'good'); loadUsers(); }
+  else toast(r.data?.error || 'Could not delete customer', 'err');
+}
+//
+
+function refreshUser(){ loadCart(); loadOrders(); }
+$('userSelect').addEventListener('change', refreshUser);
+
+ping(); loadUsers(); loadProducts();
 </script>
 </body>
 </html>
