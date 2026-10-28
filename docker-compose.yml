@@ -1,0 +1,78 @@
+services:
+  user-service:
+    image: nyncp/ecom-user-service:v1
+    build: ./user-service
+    env_file: ./user-service/.env
+    ports:
+      - "3001:3001"
+
+  product-service:
+    image: nyncp/ecom-product-service:v1
+    build: ./product-service
+    env_file: ./product-service/.env
+    ports:
+      - "3002:3002"
+
+  cart-service:
+    image: nyncp/ecom-cart-service:v1
+    build: ./cart-service
+    env_file: ./cart-service/.env
+    environment:
+      PRODUCT_SERVICE_URL: http://product-service:3002
+    ports:
+      - "3004:3004"
+
+  payment-service:
+    image: nyncp/ecom-payment-service:v1
+    build: ./payment-service
+    env_file: ./payment-service/.env
+    ports:
+      - "3005:3005"
+
+  notification-service:
+    image: nyncp/ecom-notification-service:v1
+    build: ./notification-service
+    env_file: ./notification-service/.env
+    ports:
+      - "3006:3006"
+
+  order-service:
+    image: nyncp/ecom-order-service:v1
+    build: ./order-service
+    env_file: ./order-service/.env
+    environment:
+      USER_SERVICE_URL: http://user-service:3001
+      PRODUCT_SERVICE_URL: http://product-service:3002
+      CART_SERVICE_URL: http://cart-service:3004
+      PAYMENT_SERVICE_URL: http://payment-service:3005
+      NOTIFICATION_SERVICE_URL: http://notification-service:3006
+    ports:
+      - "3003:3003"
+
+  api-gateway:
+    image: nyncp/ecom-api-gateway:v1
+    build: ./api-gateway
+    environment:
+      USER_SERVICE_URL: http://user-service:3001
+      PRODUCT_SERVICE_URL: http://product-service:3002
+      ORDER_SERVICE_URL: http://order-service:3003
+      CART_SERVICE_URL: http://cart-service:3004
+      PAYMENT_SERVICE_URL: http://payment-service:3005
+      NOTIFICATION_SERVICE_URL: http://notification-service:3006
+    ports:
+      - "5000:5000"
+    depends_on:
+      - user-service
+      - product-service
+      - order-service
+      - cart-service
+      - payment-service
+      - notification-service
+  
+  frontend:
+    image: nyncp/ecom-frontend:v1
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - api-gateway

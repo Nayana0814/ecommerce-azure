@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E-Commerce Microservices</title>
+<style>
+  *{box-sizing:border-box}
+  body{font-family:system-ui,sans-serif;margin:0;background:#f4f6f8;color:#222}
+  header{background:#0f4c81;color:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+  header h1{margin:0;font-size:20px}
+  main{max-width:1000px;margin:20px auto;padding:0 16px;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(440px,1fr))}
+  @media(max-width:520px){main{grid-template-columns:1fr}}
+  section{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  h2{margin:0 0 12px;font-size:16px;color:#0f4c81}
+  input,select,button{padding:8px;margin:3px 0;font-size:14px;border:1px solid #ccc;border-radius:6px}
+  input{width:100%}
+  button{background:#0f4c81;color:#fff;border:0;cursor:pointer}
+  button.sec{background:#e5e9ee;color:#222}
+  button.del{background:#c0392b}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #eee;font-size:14px}
+  .small{font-size:12px;color:#666}
+  .tag{padding:2px 8px;border-radius:10px;font-size:12px;color:#fff}
+  .PAID{background:#27ae60}.PAYMENT_FAILED,.PAYMENT_ERROR{background:#c0392b}.PENDING{background:#e67e22}
+  #toast{position:fixed;bottom:20px;right:20px;background:#222;color:#fff;padding:10px 16px;border-radius:8px;display:none;max-width:320px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🛒 E-Commerce Microservices</h1>
+  <div>Shopping as: <select id="userSelect" onchange="onUserChange()"></select></div>
+</header>
+
+<main>
+  <section>
+    <h2>Customers</h2>
+    <input id="uName" placeholder="Name">
+    <input id="uEmail" placeholder="Email">
+    <button onclick="createUser()">Register customer</button>
+  </section>
+
+  <section>
+    <h2>Add product</h2>
+    <input id="pName" placeholder="Product name">
+    <input id="pPrice" type="number" placeholder="Price">
+    <input id="pDesc" placeholder="Description">
+    <button onclick="createProduct()">Add product</button>
+  </section>
+
+  <section>
+    <h2>Products</h2>
+    <div id="products"></div>
+  </section>
+
+  <section>
+    <h2>My cart</h2>
+    <div id="cart"></div>
+    <label class="small"><input type="checkbox" id="failPay" style="width:auto"> Simulate payment failure</label><br>
+    <button onclick="checkout()">Checkout</button>
+  </section>
+
+  <section style="grid-column:1/-1">
+    <h2>My orders</h2>
+    <div id="orders"></div>
+  </section>
+</main>
+<div id="toast"></div>
+
+<script src="config.js"></script>
+<script>
+const API = (localStorage.getItem('gatewayUrl') || window.GATEWAY_URL).replace(/\/$/, '');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $ = id => document.getElementById(id);
+const money = n => '₹' + Number(n).toLocaleString('en-IN');
+
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.style.display = 'block';
+  clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 3500);
+}
+
+async function api(path, method = 'GET', body){
+  try{
+    const res = await fetch(API + path, {
+      method,
+      headers: body ? {'Content-Type':'application/json'} : undefined,
+      body: body ? JSON.stringify(body) : undefined
+    });
+    let data = null;
+    try{ data = await res.json(); }catch{}
+    return {ok: res.ok, status: res.status, data};
+  }catch(e){
+    return {ok:false, status:0, data:{error:'Cannot reach gateway at ' + API}};
+  }
+}
+
+const userId = () => $('userSelect').value;
+
+async function loadUsers(){
+  const r = await api('/users');
+  const sel = $('userSelect'); const keep = sel.value;
+  sel.innerHTML = '';
+  (r.ok ? r.data : []).forEach(u => {
+    const o = document.createElement('option');
+    o.value = u.id; o.textContent = u.name + ' (' + u.email + ')';
+    sel.appendChild(o);
+  });
+  if(keep) sel.value = keep;
+  if(!r.ok) toast(r.data?.error || 'Could not load users');
+  onUserChange();
+}
+
+async function createUser(){
+  const r = await api('/users','POST',{name:$('uName').value, email:$('uEmail').value});
+  if(r.ok){ toast('Customer registered'); $('uName').value=''; $('uEmail').value=''; await loadUsers(); $('userSelect').value = r.data.id; onUserChange(); }
+  else toast(r.data?.error || 'Error registering customer');
+}
+
+async function loadProducts(){
+  const r = await api('/products');
+  const box = $('products');
+  if(!r.ok || !r.data.length){ box.innerHTML = '<div class="small">No products yet.</div>'; return; }
+  box.innerHTML = r.data.map(p => `
+    <div class="row">
+      <div><b>${esc(p.name)}</b> – ${money(p.price)}<div class="small">${esc(p.description)}</div></div>
+      <button onclick="addToCart('${esc(p.id)}')">Add to cart</button>
+    </div>`).join('');
+}
+
+async function createProduct(){
+  const r = await api('/products','POST',{name:$('pName').value, price:parseFloat($('pPrice').value), description:$('pDesc').value});
+  if(r.ok){ toast('Product added'); ['pName','pPrice','pDesc'].forEach(i => $(i).value=''); loadProducts(); }
+  else toast(r.data?.error || 'Error adding product');
+}
+
+async function addToCart(productId){
+  if(!userId()) return toast('Register or select a customer first');
+  const r = await api('/cart/' + userId() + '/items','POST',{product_id:productId, quantity:1});
+  if(r.ok){ toast('Added to cart'); loadCart(); } else toast(r.data?.error || 'Could not add to cart');
+}
+
+async function loadCart(){
+  const box = $('cart');
+  if(!userId()){ box.innerHTML = '<div class="small">Select a customer.</div>'; return; }
+  const r = await api('/cart/' + userId());
+  if(!r.ok){ box.innerHTML = '<div class="small">Cart unavailable.</div>'; return; }
+  if(!r.data.items.length){ box.innerHTML = '<div class="small">Cart is empty.</div>'; return; }
+  box.innerHTML = r.data.items.map(i => `
+    <div class="row">
+      <div>${esc(i.name)} × ${i.quantity}<div class="small">${money(i.price * i.quantity)}</div></div>
+      <button class="del" onclick="removeItem('${esc(i.productId)}')">Remove</button>
+    </div>`).join('') + `<div class="row"><b>Total</b><b>${money(r.data.total)}</b></div>`;
+}
+
+async function removeItem(productId){
+  await api('/cart/' + userId() + '/items/' + productId,'DELETE');
+  loadCart();
+}
+
+async function checkout(){
+  if(!userId()) return toast('Select a customer first');
+  const r = await api('/orders/checkout','POST',{user_id:userId(), simulate_payment_failure:$('failPay').checked});
+  if(r.ok) toast('Order placed and paid!');
+  else toast(r.data?.message || r.data?.error || 'Checkout failed');
+  loadCart(); loadOrders();
+}
+
+async function loadOrders(){
+  const box = $('orders');
+  if(!userId()){ box.innerHTML = '<div class="small">Select a customer.</div>'; return; }
+  const r = await api('/orders?user_id=' + userId());
+  if(!r.ok || !r.data.length){ box.innerHTML = '<div class="small">No orders yet.</div>'; return; }
+  box.innerHTML = r.data.map(o => `
+    <div class="row">
+      <div><b>Order ${esc(o.id)}</b>
+        <div class="small">${(o.items || []).map(i => esc(i.name) + ' × ' + i.quantity).join(', ')}</div></div>
+      <div>${money(o.total || 0)} <span class="tag ${esc(o.status)}">${esc(o.status)}</span></div>
+    </div>`).join('');
+}
+
+function onUserChange(){ loadCart(); loadOrders(); }
+
+loadUsers(); loadProducts();
+</script>
+</body>
+</html>
